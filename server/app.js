@@ -8,6 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const gameRoutes = require('./routes/gameRoutes');
 
 const app = express();
+const dbStatusPagePath = path.join(__dirname, '..', 'database-connection-status.html');
 
 // Middleware
 app.use(cors());
@@ -33,7 +34,12 @@ app.get('/api/health/db', (req, res) => {
 });
 
 app.get('/database-connection-status.html', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'database-connection-status.html'));
+    res.sendFile(dbStatusPagePath);
+});
+
+// Show the DB check page on the base URL for Render users.
+app.get('/', (req, res) => {
+    res.sendFile(dbStatusPagePath);
 });
 
 app.use('/api/auth', authRoutes);
