@@ -16,21 +16,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Routes
-app.get('/api/health/db', (req, res) => {
-    db.query('SELECT 1 AS ok', (err) => {
-        if (err) {
-            return res.status(503).json({
-                ok: false,
-                message: 'Database not reachable from the API',
-                error: err.message
-            });
-        }
+app.get('/api/health/db', async (req, res) => {
+    try {
+        await db.execute('SELECT 1 AS ok');
         res.json({
             ok: true,
             message: 'Database connection successful',
             timestamp: new Date().toISOString()
         });
-    });
+    } catch (err) {
+        return res.status(503).json({
+            ok: false,
+            message: 'Database not reachable from the API',
+            error: err.message
+        });
+    }
 });
 
 app.get('/database-connection-status.html', (req, res) => {
