@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Database connection check</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --ok: #0d7d4d;
+      --ok-bg: #e6f7ef;
+      --bad: #b42318;
+      --bad-bg: #fde8e6;
+      --muted: #5c5c5c;
+      --border: #ccc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, Segoe UI, Roboto, sans-serif;
+      max-width: 40rem;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      line-height: 1.5;
+    }
+    h1 { font-size: 1.35rem; margin-bottom: 0.5rem; }
+    p.hint { color: var(--muted); font-size: 0.9rem; margin-top: 0; }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .status {
+      font-weight: 600;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin: 0 0 1rem;
+    }
+    .status.ok { background: var(--ok-bg); color: var(--ok); }
+    .status.fail { background: var(--bad-bg); color: var(--bad); }
+    pre {
+      margin: 0;
+      font-size: 0.8rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    button {
+      margin-top: 0.75rem;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #f4f4f4;
+    }
+    button:hover { filter: brightness(0.97); }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.35rem; color: var(--muted); }
+    input[type="url"] {
+      width: 100%;
+      padding: 0.5rem 0.65rem;
+      font-size: 0.95rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <h1>API &amp; database check</h1>
+  <p class="hint">
+    This page calls your backend <code>GET /api/health/db</code>. If the response is successful, your API is up and the server can talk to MySQL (for example after wiring Vercel env vars).
+    Open this page from the same host as your API (do not open as a local file if the API is on Vercel).
+  </p>
+
+  <div class="card">
+    <label for="baseUrl">Optional API base URL (only if this HTML is not served from your API)</label>
+    <input id="baseUrl" type="url" placeholder="https://your-backend.vercel.app" />
+    <div id="status" class="status" style="display:none;"></div>
+    <pre id="raw"></pre>
+    <button type="button" id="retry">Check again</button>
+  </div>
+
+  <script>
+    (function () {
+      const statusEl = document.getElementById('status');
+      const rawEl = document.getElementById('raw');
+      const baseInput = document.getElementById('baseUrl');
+
+      function base() {
+        const v = (baseInput.value || '').trim().replace(/\/$/, '');
+        return v || window.location.origin;
+      }
+
+      async function runCheck() {
+        statusEl.style.display = 'block';
+        statusEl.className = 'status';
+        statusEl.textContent = 'Checking…';
+        rawEl.textContent = '';
+
+        const url = base() + '/api/health/db';
+        try {
+          const res = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
+          const text = await res.text();
+          let body;
+          try { body = JSON.parse(text); } catch (_) { body = { raw: text }; }
+
+          if (res.ok && body.ok) {
+            statusEl.classList.add('ok');
+            statusEl.textContent = 'Connection successful — API and database are reachable.';
+          } else {
+            statusEl.classList.add('fail');
+            statusEl.textContent =
+              'Connection failed — API returned an error or the database is not reachable.';
+          }
+          rawEl.textContent = JSON.stringify({ httpStatus: res.status, url, body }, null, 2);
+        } catch (e) {
+          statusEl.classList.add('fail');
+          statusEl.textContent =
+            'Request failed — CORS, wrong URL, or server not running. See JSON below.';
+          rawEl.textContent = JSON.stringify({ url, error: String(e.message || e) }, null, 2);
+        }
+      }
+
+      document.getElementById('retry').addEventListener('click', runCheck);
+      runCheck();
+    })();
+  </script>
+</body>
+</html>
