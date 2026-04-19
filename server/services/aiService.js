@@ -47,18 +47,54 @@ const minimax = (board, depth, isMaximizing, aiPlayer, humanPlayer) => {
     }
 };
 
+const getBiasedAIMove = (userMove, userWinningRule, aiWinningRule) => {
+    // 60%: choose move that lets user win, 40%: choose move that lets AI win.
+    // This avoids repeated draws when userMove is valid.
+    return Math.random() < 0.6 ? userWinningRule[userMove] : aiWinningRule[userMove];
+};
+
 const getAiMove = (gameType, userMove = null) => {
     if (gameType === 'number_guessing') {
         return Math.floor(Math.random() * 100) + 1;
     }
 
     if (gameType === 'swg') {
+        const userWinningRule = {
+            snake: 'water',
+            water: 'gun',
+            gun: 'snake'
+        };
+        const aiWinningRule = {
+            snake: 'gun',
+            water: 'snake',
+            gun: 'water'
+        };
+
+        if (userMove && userWinningRule[userMove] && aiWinningRule[userMove]) {
+            return getBiasedAIMove(userMove, userWinningRule, aiWinningRule);
+        }
+
         const moves = ['snake', 'water', 'gun'];
         const randomIndex = Math.floor(Math.random() * moves.length);
         return moves[randomIndex];
     }
 
     if (gameType === 'rps') {
+        const userWinningRule = {
+            rock: 'scissors',
+            paper: 'rock',
+            scissors: 'paper'
+        };
+        const aiWinningRule = {
+            rock: 'paper',
+            paper: 'scissors',
+            scissors: 'rock'
+        };
+
+        if (userMove && userWinningRule[userMove] && aiWinningRule[userMove]) {
+            return getBiasedAIMove(userMove, userWinningRule, aiWinningRule);
+        }
+
         const moves = ['rock', 'paper', 'scissors'];
         const randomIndex = Math.floor(Math.random() * moves.length);
         return moves[randomIndex];
